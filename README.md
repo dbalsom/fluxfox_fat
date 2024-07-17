@@ -1,3 +1,6 @@
+This is a fork of https://github.com/rafalh/rust-fatfs for internal use by the MartyPC emulator.
+Please open issues upstream.
+
 Rust FAT FS
 ===========
 
