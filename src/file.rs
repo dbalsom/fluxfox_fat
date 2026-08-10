@@ -1,6 +1,6 @@
 use core::convert::TryFrom;
 
-use crate::dir_entry::DirEntryEditor;
+use crate::dir_entry::{DirEntryEditor, FileAttributes};
 use crate::error::Error;
 use crate::fs::{FileSystem, ReadWriteSeek};
 use crate::io::{IoBase, Read, Seek, SeekFrom, Write};
@@ -169,6 +169,25 @@ impl<'a, IO: ReadWriteSeek, TP, OCC> File<'a, IO, TP, OCC> {
     pub fn set_modified(&mut self, date_time: DateTime) {
         if let Some(ref mut e) = self.entry {
             e.set_modified(date_time);
+        }
+    }
+
+    /// Returns this file's attributes.
+    #[must_use]
+    pub fn attributes(&self) -> FileAttributes {
+        self.entry
+            .as_ref()
+            .map_or(FileAttributes::DIRECTORY, |e| e.inner().attributes())
+    }
+
+    /// Sets this file's attributes.
+    ///
+    /// Only the `READ_ONLY`, `HIDDEN`, `SYSTEM`, and `ARCHIVE` attributes are
+    /// changed. The structural `DIRECTORY` and `VOLUME_ID` attributes are
+    /// preserved.
+    pub fn set_attributes(&mut self, attributes: FileAttributes) {
+        if let Some(ref mut e) = self.entry {
+            e.set_attributes(attributes);
         }
     }
 

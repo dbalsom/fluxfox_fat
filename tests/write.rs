@@ -4,7 +4,7 @@ use std::io::prelude::*;
 use std::mem;
 use std::str;
 
-use fatfs::{FsOptions, StdIoWrapper};
+use fatfs::{FileAttributes, FsOptions, StdIoWrapper};
 use fscommon::BufStream;
 
 const FAT12_IMG: &str = "fat12.img";
@@ -386,6 +386,58 @@ fn test_multiple_files_in_directory(fs: FileSystem) {
     }
 }
 
+fn test_set_attributes(fs: FileSystem) {
+    let root_dir = fs.root_dir();
+    let expected_file_attributes =
+        FileAttributes::READ_ONLY | FileAttributes::HIDDEN | FileAttributes::SYSTEM | FileAttributes::ARCHIVE;
+
+    {
+        let mut file = root_dir.create_file("attributes.txt").unwrap();
+        file.set_attributes(expected_file_attributes | FileAttributes::DIRECTORY | FileAttributes::VOLUME_ID);
+        assert_eq!(file.attributes(), expected_file_attributes);
+        file.flush().unwrap();
+    }
+
+    let entry = root_dir
+        .iter()
+        .map(|entry| entry.unwrap())
+        .find(|entry| entry.file_name() == "attributes.txt")
+        .unwrap();
+    assert_eq!(entry.attributes(), expected_file_attributes);
+
+    {
+        let mut file = root_dir.open_file("attributes.txt").unwrap();
+        file.set_attributes(FileAttributes::HIDDEN);
+        file.flush().unwrap();
+    }
+
+    let entry = root_dir
+        .iter()
+        .map(|entry| entry.unwrap())
+        .find(|entry| entry.file_name() == "attributes.txt")
+        .unwrap();
+    assert_eq!(entry.attributes(), FileAttributes::HIDDEN);
+
+    {
+        let mut directory = root_dir.create_dir("attribute-dir").unwrap();
+        directory.set_attributes(FileAttributes::HIDDEN | FileAttributes::SYSTEM);
+        assert_eq!(
+            directory.attributes(),
+            FileAttributes::DIRECTORY | FileAttributes::HIDDEN | FileAttributes::SYSTEM
+        );
+    }
+
+    let entry = root_dir
+        .iter()
+        .map(|entry| entry.unwrap())
+        .find(|entry| entry.file_name() == "attribute-dir")
+        .unwrap();
+    assert_eq!(
+        entry.attributes(),
+        FileAttributes::DIRECTORY | FileAttributes::HIDDEN | FileAttributes::SYSTEM
+    );
+}
+
 #[test]
 fn test_multiple_files_in_directory_fat12() {
     call_with_fs(test_multiple_files_in_directory, FAT12_IMG, 8)
@@ -399,4 +451,19 @@ fn test_multiple_files_in_directory_fat16() {
 #[test]
 fn test_multiple_files_in_directory_fat32() {
     call_with_fs(test_multiple_files_in_directory, FAT32_IMG, 8)
+}
+
+#[test]
+fn test_set_attributes_fat12() {
+    call_with_fs(test_set_attributes, FAT12_IMG, 9)
+}
+
+#[test]
+fn test_set_attributes_fat16() {
+    call_with_fs(test_set_attributes, FAT16_IMG, 9)
+}
+
+#[test]
+fn test_set_attributes_fat32() {
+    call_with_fs(test_set_attributes, FAT32_IMG, 9)
 }

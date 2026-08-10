@@ -126,6 +126,27 @@ impl<'a, IO: ReadWriteSeek, TP, OCC> Dir<'a, IO, TP, OCC> {
     pub fn iter(&self) -> DirIter<'a, IO, TP, OCC> {
         DirIter::new(self.stream.clone(), self.fs, true)
     }
+
+    /// Returns this directory's attributes.
+    #[must_use]
+    pub fn attributes(&self) -> FileAttributes {
+        match &self.stream {
+            DirRawStream::File(file) => file.attributes(),
+            DirRawStream::Root(_) => FileAttributes::DIRECTORY,
+        }
+    }
+
+    /// Sets this directory's attributes.
+    ///
+    /// Only the `READ_ONLY`, `HIDDEN`, `SYSTEM`, and `ARCHIVE` attributes are
+    /// changed. The structural `DIRECTORY` and `VOLUME_ID` attributes are
+    /// preserved. This method has no effect on the root directory because it
+    /// has no directory entry.
+    pub fn set_attributes(&mut self, attributes: FileAttributes) {
+        if let DirRawStream::File(file) = &mut self.stream {
+            file.set_attributes(attributes);
+        }
+    }
 }
 
 impl<'a, IO: ReadWriteSeek, TP: TimeProvider, OCC: OemCpConverter> Dir<'a, IO, TP, OCC> {

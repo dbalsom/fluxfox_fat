@@ -31,6 +31,16 @@ bitflags! {
     }
 }
 
+impl FileAttributes {
+    /// Returns the attributes that can be changed on a file or directory.
+    ///
+    /// The structural `DIRECTORY` and `VOLUME_ID` attributes are excluded.
+    #[must_use]
+    pub fn settable(self) -> Self {
+        self & (Self::READ_ONLY | Self::HIDDEN | Self::SYSTEM | Self::ARCHIVE)
+    }
+}
+
 // Size of single directory entry in bytes
 pub(crate) const DIR_ENTRY_SIZE: u32 = 32;
 
@@ -159,6 +169,15 @@ impl DirFileEntryData {
 
     pub(crate) fn name(&self) -> &[u8; SFN_SIZE] {
         &self.name
+    }
+
+    pub(crate) fn attributes(&self) -> FileAttributes {
+        self.attrs
+    }
+
+    fn set_attributes(&mut self, attributes: FileAttributes) {
+        let structural = self.attrs - self.attrs.settable();
+        self.attrs = structural | attributes.settable();
     }
 
     #[cfg(feature = "alloc")]
@@ -512,6 +531,14 @@ impl DirEntryEditor {
         }
     }
 
+    pub(crate) fn set_attributes(&mut self, attributes: FileAttributes) {
+        let old_attributes = self.data.attributes();
+        self.data.set_attributes(attributes);
+        if old_attributes != self.data.attributes() {
+            self.dirty = true;
+        }
+    }
+
     pub(crate) fn flush<IO: ReadWriteSeek, TP, OCC>(&mut self, fs: &FileSystem<IO, TP, OCC>) -> Result<(), IO::Error> {
         if self.dirty {
             self.write(fs)?;
@@ -726,6 +753,15 @@ impl<IO: ReadWriteSeek, TP, OCC> fmt::Debug for DirEntry<'_, IO, TP, OCC> {
 mod tests {
     use super::*;
     use crate::fs::LossyOemCpConverter;
+
+    #[test]
+    fn settable_file_attributes() {
+        let attributes = FileAttributes::all();
+        assert_eq!(
+            attributes.settable(),
+            FileAttributes::READ_ONLY | FileAttributes::HIDDEN | FileAttributes::SYSTEM | FileAttributes::ARCHIVE
+        );
+    }
 
     #[test]
     fn short_name_with_ext() {
