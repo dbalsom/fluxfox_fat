@@ -147,6 +147,8 @@ fn test_create_file(fs: FileSystem) {
         let mut file = root_dir
             .create_file("very/long/path/new-file-with-long-name.txt")
             .unwrap();
+        assert_eq!(file.short_file_name(), "NEW-FI~1.TXT");
+        assert_eq!(file.short_file_name_as_bytes(), b"NEW-FI~1.TXT");
         file.write_all(TEST_STR.as_bytes()).unwrap();
     }
     // check for dir entry
@@ -162,6 +164,7 @@ fn test_create_file(fs: FileSystem) {
         let mut file = root_dir
             .open_file("very/long/path/new-file-with-long-name.txt")
             .unwrap();
+        assert_eq!(file.short_file_name(), "NEW-FI~1.TXT");
         let mut content = String::new();
         file.read_to_string(&mut content).unwrap();
         assert_eq!(&content, &TEST_STR);

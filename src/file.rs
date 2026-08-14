@@ -1,8 +1,10 @@
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::string::String;
 use core::convert::TryFrom;
 
-use crate::dir_entry::{DirEntryEditor, FileAttributes};
+use crate::dir_entry::{DirEntryEditor, FileAttributes, ShortName};
 use crate::error::Error;
-use crate::fs::{FileSystem, ReadWriteSeek};
+use crate::fs::{FileSystem, OemCpConverter, ReadWriteSeek};
 use crate::io::{IoBase, Read, Seek, SeekFrom, Write};
 use crate::time::{Date, DateTime, TimeProvider};
 
@@ -20,6 +22,8 @@ pub struct File<'a, IO: ReadWriteSeek, TP, OCC> {
     offset: u32,
     // file dir entry editor - None for root dir
     entry: Option<DirEntryEditor>,
+    // actual short name stored in the FAT directory entry
+    short_name: ShortName,
     // file-system reference
     fs: &'a FileSystem<IO, TP, OCC>,
 }
@@ -39,11 +43,13 @@ impl<'a, IO: ReadWriteSeek, TP, OCC> File<'a, IO, TP, OCC> {
     pub(crate) fn new(
         first_cluster: Option<u32>,
         entry: Option<DirEntryEditor>,
+        short_name: ShortName,
         fs: &'a FileSystem<IO, TP, OCC>,
     ) -> Self {
         File {
             first_cluster,
             entry,
+            short_name,
             fs,
             current_cluster: None, // cluster before first one
             offset: 0,
@@ -233,6 +239,21 @@ impl<'a, IO: ReadWriteSeek, TP, OCC> File<'a, IO, TP, OCC> {
     }
 }
 
+impl<IO: ReadWriteSeek, TP, OCC: OemCpConverter> File<'_, IO, TP, OCC> {
+    /// Returns the actual short file name stored in the FAT directory entry.
+    #[cfg(feature = "alloc")]
+    #[must_use]
+    pub fn short_file_name(&self) -> String {
+        self.short_name.to_string(&self.fs.options.oem_cp_converter)
+    }
+
+    /// Returns the actual short file name as a byte slice encoded in the OEM code page.
+    #[must_use]
+    pub fn short_file_name_as_bytes(&self) -> &[u8] {
+        self.short_name.as_bytes()
+    }
+}
+
 impl<IO: ReadWriteSeek, TP: TimeProvider, OCC> File<'_, IO, TP, OCC> {
     fn update_dir_entry_after_write(&mut self) {
         let offset = self.offset;
@@ -262,6 +283,7 @@ impl<IO: ReadWriteSeek, TP, OCC> Clone for File<'_, IO, TP, OCC> {
             current_cluster: self.current_cluster,
             offset: self.offset,
             entry: self.entry.clone(),
+            short_name: self.short_name.clone(),
             fs: self.fs,
         }
     }

@@ -111,12 +111,12 @@ impl ShortName {
         }
     }
 
-    fn as_bytes(&self) -> &[u8] {
+    pub(crate) fn as_bytes(&self) -> &[u8] {
         &self.name[..usize::from(self.len)]
     }
 
     #[cfg(feature = "alloc")]
-    fn to_string<OCC: OemCpConverter>(&self, oem_cp_converter: &OCC) -> String {
+    pub(crate) fn to_string<OCC: OemCpConverter>(&self, oem_cp_converter: &OCC) -> String {
         // Strip non-ascii characters from short name
         self.as_bytes()
             .iter()
@@ -653,7 +653,12 @@ impl<'a, IO: ReadWriteSeek, TP, OCC: OemCpConverter> DirEntry<'a, IO, TP, OCC> {
     #[must_use]
     pub fn to_file(&self) -> File<'a, IO, TP, OCC> {
         assert!(!self.is_dir(), "Not a file entry");
-        File::new(self.first_cluster(), Some(self.editor()), self.fs)
+        File::new(
+            self.first_cluster(),
+            Some(self.editor()),
+            self.short_name.clone(),
+            self.fs,
+        )
     }
 
     /// Returns `Dir` struct for this entry.
@@ -666,7 +671,7 @@ impl<'a, IO: ReadWriteSeek, TP, OCC: OemCpConverter> DirEntry<'a, IO, TP, OCC> {
         assert!(self.is_dir(), "Not a directory entry");
         match self.first_cluster() {
             Some(n) => {
-                let file = File::new(Some(n), Some(self.editor()), self.fs);
+                let file = File::new(Some(n), Some(self.editor()), self.short_name.clone(), self.fs);
                 Dir::new(DirRawStream::File(file), self.fs)
             }
             None => self.fs.root_dir(),

@@ -1,20 +1,23 @@
 [package]
-name = "fatfs"
-version = "0.4.0"
-authors = ["Rafał Harabień <rafalh92@outlook.com>"]
+name = "fluxfox-fat"
+version = "0.4.2"
+authors = ["Rafał Harabień <rafalh92@outlook.com>", "Daniel Balsom <d.balsom@gmail.com>"]
 edition = "2021"
 rust-version = "1.68"
-repository = "https://github.com/rafalh/rust-fatfs"
+repository = "https://github.com/dbalsom/fluxfox_fat"
 readme = "README.md"
 keywords = ["fat", "filesystem", "no_std"]
 categories = ["filesystem"]
 license = "MIT"
 description = """
-FAT filesystem library.
+FAT filesystem library for retrocomputing
 """
 exclude = [
     "resources/*",
 ]
+
+[lib]
+name = "fatfs"
 
 [features]
 # Use Rust std library
