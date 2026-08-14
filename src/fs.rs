@@ -8,7 +8,7 @@ use core::marker::PhantomData;
 
 use crate::boot_sector::{format_boot_sector, BiosParameterBlock, BootSector};
 use crate::dir::{Dir, DirRawStream};
-use crate::dir_entry::{DirFileEntryData, FileAttributes, SFN_PADDING, SFN_SIZE};
+use crate::dir_entry::{DirFileEntryData, FileAttributes, ShortName, SFN_PADDING, SFN_SIZE};
 use crate::error::Error;
 use crate::file::File;
 use crate::io::{self, IoBase, Read, ReadLeExt, Seek, SeekFrom, Write, WriteLeExt};
@@ -628,7 +628,12 @@ impl<IO: Read + Write + Seek, TP, OCC> FileSystem<IO, TP, OCC> {
                     &self.bpb,
                     FsIoAdapter { fs: self },
                 )),
-                FatType::Fat32 => DirRawStream::File(File::new(Some(self.bpb.root_dir_first_cluster), None, self)),
+                FatType::Fat32 => DirRawStream::File(File::new(
+                    Some(self.bpb.root_dir_first_cluster),
+                    None,
+                    ShortName::default(),
+                    self,
+                )),
             }
         };
         Dir::new(root_rdr, self)

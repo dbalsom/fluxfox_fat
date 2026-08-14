@@ -1,16 +1,19 @@
-This is a fork of https://github.com/rafalh/rust-fatfs for internal use by the MartyPC emulator.
-Please open issues upstream.
-
-Rust FAT FS
+fluxfox-fat
 ===========
 
-[![CI Status](https://github.com/rafalh/rust-fatfs/actions/workflows/ci.yml/badge.svg)](https://github.com/rafalh/rust-fatfs/actions/workflows/ci.yml)
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.txt)
-[![crates.io](https://img.shields.io/crates/v/fatfs)](https://crates.io/crates/fatfs)
-[![Documentation](https://docs.rs/fatfs/badge.svg)](https://docs.rs/fatfs)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.68+-yellow.svg)](https://blog.rust-lang.org/2023/03/09/Rust-1.68.0/)
-
 A FAT filesystem library implemented in Rust.
+
+**fluxfox-fat** is a fork of https://github.com/rafalh/rust-fatfs for internal use by the [fluxfox](https://github.com/dbalsom/fluxfox) floppy disk library and the [MartyPC emulator](https://github.com/dbalsom/martypc).
+
+**rust-fatfs** is (C)2026 Rafał Harabień
+
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.txt)
+
+Features added:
+* API to set DOS attributes on file
+* API to retrieve short filename from file handle
+
+
 
 Features:
 * read/write file using standard Read/Write traits
@@ -30,9 +33,9 @@ Usage
 Add this to your `Cargo.toml`:
 
     [dependencies]
-    fatfs = "0.3"
+    fluxfox-fat = "0.4"
 
-You can start using the `fatfs` library now:
+You can start using the `fluxfox-fat` library now:
 
     let img_file = File::open("fat.img")?;
     let fs = fatfs::FileSystem::new(img_file, fatfs::FsOptions::new())?;
@@ -59,10 +62,8 @@ Add this to your `Cargo.toml`:
 Additional features:
 
 * `lfn` - LFN (long file name) support
-* `alloc` - use `alloc` crate for dynamic allocation. Needed for API which uses `String` type. You may have to provide
-a memory allocator implementation.
-* `unicode` - use Unicode-compatible case conversion in file names - you may want to have it disabled for lower memory
-footprint
+* `alloc` - use `alloc` crate for dynamic allocation. Needed for API which uses `String` type. You may have to provide a memory allocator implementation.
+* `unicode` - use Unicode-compatible case conversion in file names - you may want to have it disabled for lower memory footprint
 * `log_level_*` - enable specific logging levels at compile time.
 The options are as follows:
   * `log_level_error` - enable only error-level logging.
