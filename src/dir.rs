@@ -126,8 +126,7 @@ impl<'a, IO: ReadWriteSeek, TP, OCC> Dir<'a, IO, TP, OCC> {
     pub fn iter(&self) -> DirIter<'a, IO, TP, OCC> {
         DirIter::new(self.stream.clone(), self.fs, true)
     }
-    assert_eq!(file.short_file_name(), "NEW-FI~1.TXT");
-    assert_eq!(file.short_file_name_as_bytes(), b"NEW-FI~1.TXT");
+
     /// Returns this directory's attributes.
     #[must_use]
     pub fn attributes(&self) -> FileAttributes {
